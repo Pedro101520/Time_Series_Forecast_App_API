@@ -19,4 +19,5 @@ def upload_csv():
         "message": "CSV recebido com sucesso",
     }), 200
 
-app.run()
+if __name__ == "__main__":
+    app.run()
