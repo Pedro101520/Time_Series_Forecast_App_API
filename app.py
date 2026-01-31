@@ -33,6 +33,6 @@ def upload_csv():
     }), 200
 
 
-# if __name__ == "__main__":
-#     app.run()
-app.run()
+if __name__ == "__main__":
+    app.run()
+# app.run()
