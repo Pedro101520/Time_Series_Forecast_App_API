@@ -23,6 +23,7 @@ def upload_csv():
         pipeline.carregar_base(df)
         pipeline.validar_serie()
         pipeline.padroniza_nome()
+        pipeline.tratamento_nulo()
         # pipeline.retorna()
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400

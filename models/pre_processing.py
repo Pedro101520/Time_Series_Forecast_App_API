@@ -10,6 +10,8 @@ class tratamento_base():
     def validar_serie(self):
         if len(self.df.columns) != 2:
             raise ValueError("Só é aceito séries temporais com duas colunas - (Data e valor)")
+        if self.df.empty:
+            raise ValueError("Arquivo vazio")
 
     def padroniza_nome(self):
         colunas = self.df.dtypes
@@ -52,6 +54,27 @@ class tratamento_base():
         else:
             raise ValueError("A série temporal não tem uma coluna de valores")
     
+    def tratamento_nulo(self):
+        self.df = self.df.sort_values('Data')
+
+        porcentagem_nulo_valor = ((self.df["Valor"].isna().sum())/self.df.shape[0]) * 100
+        porcentagem_nulo_data = ((self.df["Data"].isna().sum())/self.df.shape[0]) * 100
+
+        if porcentagem_nulo_data <= 20:
+            self.df["Data"] = self.df.dropna(subset=["Data"])
+
+            if porcentagem_nulo_valor <= 20:
+                self.df["Valor"] = self.df["Valor"].interpolate(
+                    method='time',
+                    limit=5,
+                    limit_direction='both'
+                )
+
+                self.df["Valor"] = self.df["Valor"].ffill().bfill()
+            else:
+                raise ValueError("A execução não prosseguirá por conta da alta quantidade de valores nulos que sua série possui (Mesmo com tratamentos a qualidade da predição será inferior)")
+        else:
+            raise ValueError("A execução não prosseguirá por conta da alta quantidade de valores nulos que sua série possui (Mesmo com tratamentos a qualidade da predição será inferior)")
 
     # def retorna(self):
     #     print(self.df["Date"])
