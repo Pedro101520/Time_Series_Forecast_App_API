@@ -5,6 +5,7 @@ from models.pre_processing import tratamento_base
 
 app = Flask(__name__)
 
+# Ajustar para receber o nome das colunas que serão utiizadas
 @app.route("/pipeline/predicao", methods=["POST"])
 def upload_csv():
     pipeline = tratamento_base()

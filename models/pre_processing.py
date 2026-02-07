@@ -8,10 +8,10 @@ class tratamento_base():
         self.df = df
     
     def validar_serie(self):
-        if len(self.df.columns) != 2:
-            raise ValueError("Só é aceito séries temporais com duas colunas - (Data e valor)")
         if self.df.empty:
             raise ValueError("Arquivo vazio")
+        if self.df.shape[0] > 200000:
+            raise ValueError("Não é aceito séries temporais com mais de 200000 ocorrências")
 
     def padroniza_nome(self):
         colunas = self.df.dtypes
@@ -76,7 +76,28 @@ class tratamento_base():
         else:
             raise ValueError("A execução não prosseguirá por conta da alta quantidade de valores nulos que sua série possui (Mesmo com tratamentos a qualidade da predição será inferior)")
 
-    # def retorna(self):
-    #     print(self.df["Date"])
+    def tratamento_outliers(self):
+        q1 = self.df["Valor"].quantile(0.25)
+        q3 = self.df["Valor"].quantile(0.75)
+        iqr = q3-q1
+
+        upper_limit = q3 + (1.5 * iqr)
+        lower_limit = q1 - (1.5 * iqr)
+
+        self.df.loc[(self.df["Valor"] > upper_limit) | (self.df["Valor"] < lower_limit)]
+
+        new_df = self.df.loc[(self.df["Valor"] < upper_limit) & (self.df["Valor"] > lower_limit)]
+        # print("Com outliers:", len(df))
+        # print("Sem outliers:", len(new_df))
+        # print("Quantidade de outliers:", len(df) - len(new_df))
+
+        new_df = self.df.copy()
+        new_df.loc[(new_df["Valor"] > upper_limit), "Valor"] = upper_limit
+        new_df.loc[(new_df["Valor"] < lower_limit), "Valor"] = lower_limit
+
+        self.df["Valor_sem_outliers"] = new_df["Valor"]
+
+    def retorna(self):
+        return(self.df)
 
     
