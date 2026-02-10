@@ -8,13 +8,15 @@ class tratamento_base():
         self.df = df
     
     def validar_serie(self):
+        if len(self.df.columns) != 2:
+            raise ValueError("Só é aceito séries temporais com duas colunas - (Data e valor)")
         if self.df.empty:
             raise ValueError("Arquivo vazio")
         if self.df.shape[0] > 200000:
             raise ValueError("Não é aceito séries temporais com mais de 200000 ocorrências")
 
     def padroniza_nome(self):
-        colunas = self.df.dtypes
+        colunas = self.df.columns
         indice = 0
         count = 0
         for i in range(0, len(colunas)):
@@ -47,7 +49,7 @@ class tratamento_base():
             col = self.df.columns[indice]
             self.df[col] = pd.to_numeric(self.df[col], errors="coerce")
 
-            self.df.rename(columns={self.df.dtypes[indice]: 'Valor'}, inplace=True)
+            self.df.rename(columns={colunas[indice]: 'Valor'}, inplace=True)
             print(self.df.dtypes)
 
             print(self.df.head())
@@ -57,13 +59,16 @@ class tratamento_base():
     def tratamento_nulo(self):
         self.df = self.df.sort_values('Data')
 
+        self.df["Data"] = pd.to_datetime(self.df["Data"], errors="coerce", format="mixed")
+
         porcentagem_nulo_valor = ((self.df["Valor"].isna().sum())/self.df.shape[0]) * 100
         porcentagem_nulo_data = ((self.df["Data"].isna().sum())/self.df.shape[0]) * 100
 
         if porcentagem_nulo_data <= 20:
-            self.df["Data"] = self.df.dropna(subset=["Data"])
+            self.df = self.df.dropna(subset=["Data"])
 
             if porcentagem_nulo_valor <= 20:
+                self.df = self.df.set_index("Data")
                 self.df["Valor"] = self.df["Valor"].interpolate(
                     method='time',
                     limit=5,
@@ -75,6 +80,7 @@ class tratamento_base():
                 raise ValueError("A execução não prosseguirá por conta da alta quantidade de valores nulos que sua série possui (Mesmo com tratamentos a qualidade da predição será inferior)")
         else:
             raise ValueError("A execução não prosseguirá por conta da alta quantidade de valores nulos que sua série possui (Mesmo com tratamentos a qualidade da predição será inferior)")
+        self.df = self.df.reset_index("Data")
 
     def tratamento_outliers(self):
         q1 = self.df["Valor"].quantile(0.25)

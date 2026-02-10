@@ -1,6 +1,6 @@
 from flask import Flask, make_response, jsonify, request
 import pandas as pd
-
+5
 from models.pre_processing import tratamento_base
 
 app = Flask(__name__)
@@ -25,16 +25,18 @@ def upload_csv():
         pipeline.validar_serie()
         pipeline.padroniza_nome()
         pipeline.tratamento_nulo()
-        # pipeline.retorna()
+        pipeline.tratamento_outliers()
+        serie_tratada = pipeline.retorna()
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
 
 
     return jsonify({
         "message": "CSV tratado com sucesso",
+        "data": serie_tratada.to_dict(orient="records")
     }), 200
 
 
-if __name__ == "__main__":
-    app.run()
-# app.run()
+# if __name__ == "__main__":
+#     app.run()
+app.run()
