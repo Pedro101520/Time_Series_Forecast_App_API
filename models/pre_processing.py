@@ -1,4 +1,6 @@
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from abc import ABC, abstractmethod
 
 class tratamento_base():
     def __init__(self):
@@ -66,6 +68,31 @@ class tratamento_base():
 
         if porcentagem_nulo_data <= 20:
             self.df = self.df.dropna(subset=["Data"])
+            self.df.set_index('Date', inplace=True)
+
+            freq = pd.infer_freq(self.df.index)
+
+            if freq is None:
+                diffs = self.df.index.to_series().diff().median()
+                if diffs == pd.Timedelta(days=1):
+                    tem_fim_de_semana = self.df.index.dayofweek.isin([5, 6]).any()
+                    
+                    if tem_fim_de_semana:
+                        freq = 'D'
+                    else:
+                        freq = 'B'
+                        
+                elif pd.Timedelta(days=27) <= diffs <= pd.Timedelta(days=31):
+                    freq = 'MS'
+                elif diffs == pd.Timedelta(hours=1):
+                    freq = 'h'
+                elif diffs == pd.Timedelta(days=7):
+                    freq = 'W'
+                else:
+                    freq = 'D'
+
+            self.df = self.df.asfreq(freq)
+            self.df = self.df.reset_index()
 
             if porcentagem_nulo_valor <= 20:
                 self.df = self.df.set_index("Data")
@@ -80,7 +107,7 @@ class tratamento_base():
                 raise ValueError("A execução não prosseguirá por conta da alta quantidade de valores nulos que sua série possui (Mesmo com tratamentos a qualidade da predição será inferior)")
         else:
             raise ValueError("A execução não prosseguirá por conta da alta quantidade de valores nulos que sua série possui (Mesmo com tratamentos a qualidade da predição será inferior)")
-        self.df = self.df.reset_index("Data")
+        self.df = self.df.reset_index()
 
     def tratamento_outliers(self):
         q1 = self.df["Valor"].quantile(0.25)
@@ -102,6 +129,11 @@ class tratamento_base():
         new_df.loc[(new_df["Valor"] < lower_limit), "Valor"] = lower_limit
 
         self.df["Valor_sem_outliers"] = new_df["Valor"]
+    
+    @abstractmethod
+    def treino_teste(self):
+        X_treino, x_teste = train_test_split(self.df, test_size=0.2, shuffle=False, random_state=42)
+        return X_treino, x_teste
 
     def retorna(self):
         return(self.df)
