@@ -1,7 +1,7 @@
 from flask import Flask, make_response, jsonify, request
 import pandas as pd
-5
 from models.pre_processing import tratamento_base
+from models.prophet import ProphetModel
 
 app = Flask(__name__)
 
@@ -9,6 +9,7 @@ app = Flask(__name__)
 @app.route("/pipeline/predicao", methods=["POST"])
 def upload_csv():
     pipeline = tratamento_base()
+    prophet = ProphetModel()
 
     if "file" not in request.files:
         return jsonify({"error": "Nenhum arquivo enviado"}), 400
@@ -26,14 +27,20 @@ def upload_csv():
         pipeline.padroniza_nome()
         pipeline.tratamento_nulo()
         pipeline.tratamento_outliers()
-        serie_tratada = pipeline.retorna()
+        treino, teste = pipeline.treino_teste()
+        df_tratado = pipeline.retorna()
+
+        prophet.padroniza_nome(treino, teste)
+        prophet.avaliar(df_tratado[["Data", "Valor"]])
+        prophet.prever_futuro()
+        df_pred_prophet = prophet.retorna()
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
 
 
     return jsonify({
         "message": "CSV tratado com sucesso",
-        "data": serie_tratada.to_dict(orient="records")
+        # "data": serie_tratada.to_dict(orient="records")
     }), 200
 
 

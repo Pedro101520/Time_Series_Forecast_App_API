@@ -28,10 +28,8 @@ class tratamento_base():
             if converter.notna().mean() > 0.8:
                 self.df.rename(columns={colunas[i]: 'Data'}, inplace=True)
                 indice = i
-                print("A coluna é de data", i)
                 break
             else:
-                print("A coluna NÃO é de data", i)
                 count += 1
         if count > 1:
             raise ValueError("A série temporal não tem coluna de data")
@@ -52,9 +50,6 @@ class tratamento_base():
             self.df[col] = pd.to_numeric(self.df[col], errors="coerce")
 
             self.df.rename(columns={colunas[indice]: 'Valor'}, inplace=True)
-            print(self.df.dtypes)
-
-            print(self.df.head())
         else:
             raise ValueError("A série temporal não tem uma coluna de valores")
     
@@ -68,7 +63,7 @@ class tratamento_base():
 
         if porcentagem_nulo_data <= 20:
             self.df = self.df.dropna(subset=["Data"])
-            self.df.set_index('Date', inplace=True)
+            self.df.set_index('Data', inplace=True)
 
             freq = pd.infer_freq(self.df.index)
 
@@ -84,12 +79,11 @@ class tratamento_base():
                         
                 elif pd.Timedelta(days=27) <= diffs <= pd.Timedelta(days=31):
                     freq = 'MS'
-                elif diffs == pd.Timedelta(hours=1):
-                    freq = 'h'
                 elif diffs == pd.Timedelta(days=7):
                     freq = 'W'
                 else:
                     freq = 'D'
+                    self.df = self.df.resample('D', on='Data').mean()
 
             self.df = self.df.asfreq(freq)
             self.df = self.df.reset_index()
@@ -120,9 +114,6 @@ class tratamento_base():
         self.df.loc[(self.df["Valor"] > upper_limit) | (self.df["Valor"] < lower_limit)]
 
         new_df = self.df.loc[(self.df["Valor"] < upper_limit) & (self.df["Valor"] > lower_limit)]
-        # print("Com outliers:", len(df))
-        # print("Sem outliers:", len(new_df))
-        # print("Quantidade de outliers:", len(df) - len(new_df))
 
         new_df = self.df.copy()
         new_df.loc[(new_df["Valor"] > upper_limit), "Valor"] = upper_limit
@@ -130,10 +121,19 @@ class tratamento_base():
 
         self.df["Valor_sem_outliers"] = new_df["Valor"]
     
-    @abstractmethod
     def treino_teste(self):
-        X_treino, x_teste = train_test_split(self.df, test_size=0.2, shuffle=False, random_state=42)
-        return X_treino, x_teste
+        df_avaliar = self.df[["Data", "Valor"]]
+        treino, teste = train_test_split(df_avaliar, test_size=0.2, shuffle=False, random_state=42)
+
+        return treino, teste
+
+    @abstractmethod
+    def prever_futuro(self):
+        pass
+
+    @abstractmethod
+    def avaliar(self):
+        pass
 
     def retorna(self):
         return(self.df)
