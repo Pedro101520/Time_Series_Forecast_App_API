@@ -127,7 +127,31 @@ class tratamento_base():
 
         return treino, teste
 
-    @abstractmethod
+    def frequencia(self, df):
+
+        df.set_index('Data', inplace=True)
+        freq = pd.infer_freq(df.index)
+
+        if freq is None:
+            diffs = df.index.to_series().diff().median()
+            if diffs == pd.Timedelta(days=1):
+                tem_fim_de_semana = df.index.dayofweek.isin([5, 6]).any()
+                
+                if tem_fim_de_semana:
+                    freq = 'D'
+                else:
+                    freq = 'B'
+                    
+            elif pd.Timedelta(days=27) <= diffs <= pd.Timedelta(days=31):
+                freq = 'MS'
+            elif diffs == pd.Timedelta(days=7):
+                freq = 'W'
+            else:
+                freq = 'D'
+
+        return(freq)
+
+    @abstractmethod 
     def prever_futuro(self):
         pass
 

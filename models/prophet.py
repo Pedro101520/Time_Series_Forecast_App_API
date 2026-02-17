@@ -28,28 +28,7 @@ class ProphetModel(tratamento_base):
 
         melhor_rmse = float('inf')
 
-        df.set_index('Data', inplace=True)
-        freq = pd.infer_freq(df.index)
-
-        if freq is None:
-            diffs = df.index.to_series().diff().median()
-            if diffs == pd.Timedelta(days=1):
-                tem_fim_de_semana = df.index.dayofweek.isin([5, 6]).any()
-                
-                if tem_fim_de_semana:
-                    freq = 'D'
-                else:
-                    freq = 'B'
-                    
-            elif pd.Timedelta(days=27) <= diffs <= pd.Timedelta(days=31):
-                freq = 'MS'
-            elif diffs == pd.Timedelta(days=7):
-                freq = 'W'
-            else:
-                freq = 'D'
-
-        self.freq = freq
-        df = df.reset_index()
+        self.freq = self.frequencia(df)
 
         for cps in cps_values:
             for sps in sps_values:
@@ -96,7 +75,7 @@ class ProphetModel(tratamento_base):
                 qtde_pred = 12
 
         future = modelo.make_future_dataframe(periods=qtde_pred, freq=self.freq)
-        self.pred = forecast = modelo.predict(future)
+        self.pred = modelo.predict(future)
     
     def retorno_pred(self):
         return self.pred[["ds", "yhat", "yhat_lower", "yhat_upper"]]

@@ -2,14 +2,16 @@ from flask import Flask, make_response, jsonify, request
 import pandas as pd
 from models.pre_processing import tratamento_base
 from models.prophet import ProphetModel
+from models.arima import ArimaModel
 
-app = Flask(__name__)
+app = Flask(__name__) 
 
 # Ajustar para receber o nome das colunas que serão utiizadas
 @app.route("/pipeline/predicao", methods=["POST"])
 def upload_csv():
     pipeline = tratamento_base()
     prophet = ProphetModel()
+    arima = ArimaModel()
 
     if "file" not in request.files:
         return jsonify({"error": "Nenhum arquivo enviado"}), 400
@@ -30,10 +32,13 @@ def upload_csv():
         treino, teste = pipeline.treino_teste()
         df_tratado = pipeline.retorna()
 
-        prophet.padroniza_nome(treino, teste)
-        prophet.avaliar(df_tratado[["Data", "Valor"]])
-        prophet.prever_futuro()
-        df_pred_prophet = prophet.retorna()
+        # prophet.padroniza_nome(treino, teste)
+        # prophet.avaliar(df_tratado[["Data", "Valor"]])
+        # prophet.prever_futuro()
+        # df_pred_prophet = prophet.retorna()
+
+        arima.avaliar(df_tratado[["Data", "Valor"]], treino, teste)
+        arima.prever_futuro()
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
 
