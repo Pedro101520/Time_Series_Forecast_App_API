@@ -81,6 +81,8 @@ class tratamento_base():
                     freq = 'MS'
                 elif diffs == pd.Timedelta(days=7):
                     freq = 'W'
+                elif pd.Timedelta(days=360) <= diffs <= pd.Timedelta(days=366):
+                    freq = 'YS'
                 else:
                     freq = 'D'
                     self.df = self.df.resample('D', on='Data').mean()

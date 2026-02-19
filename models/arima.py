@@ -1,7 +1,7 @@
 import pandas as pd
 from .pre_processing import tratamento_base
 from pmdarima import auto_arima
-from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error
 import numpy as np
 
@@ -23,37 +23,43 @@ class ArimaModel(tratamento_base):
         self.treino.set_index('Data', inplace=True)
         self.teste.set_index('Data', inplace=True)
 
-        auto_model = auto_arima(df,
-                        start_p=0, start_q=0,
-                        max_p=5, max_q=5,
-                        m=12,
-                        seasonal=True,
-                        d=None,
-                        trace=True,
-                        error_action='ignore',
-                        suppress_warnings=True,
-                        stepwise=True)
-        
+        auto_model = auto_arima(
+            df,
+            start_p=1, start_q=1,
+            max_p=3, max_q=3,
+            m=7,                  
+            seasonal=True,
+            d=1,                   
+            D=1,                  
+            max_P=1, max_Q=1,
+            test='adf',             
+            stepwise=True,
+            trace=True,
+            n_fits=20,              
+            error_action='ignore',
+            suppress_warnings=True
+        )
+                
         self.auto_model = auto_model
 
-        model = ARIMA(self.treino, order=self.auto_model.order)
+        model = SARIMAX(self.treino, order=self.auto_model.order, seasonal_order=self.auto_model.seasonal_order)
         model_fit = model.fit()
 
         forecast_test = model_fit.forecast(len(self.teste))
         self.df['forecast_manual'] = [None]*len(self.treino)+list(forecast_test)
 
 
-        # mae = mean_absolute_error(self.teste, forecast_test)
-        # mape = mean_absolute_percentage_error(self.teste, forecast_test)
-        # rmse = np.sqrt(mean_squared_error(self.teste, forecast_test))
+        mae = mean_absolute_error(self.teste, forecast_test)
+        mape = mean_absolute_percentage_error(self.teste, forecast_test)
+        rmse = np.sqrt(mean_squared_error(self.teste, forecast_test))
 
-        # print(f'mae - manual: {mae}')
-        # print(f'mape - manual: {mape}')
-        # print(f'rmse - manual: {rmse}')
+        print(f'mae - manual: {mae}')
+        print(f'mape - manual: {mape}')
+        print(f'rmse - manual: {rmse}')
     
     def prever_futuro(self):
         self.df.index.freq = self.freq
-        model = ARIMA(self.df['Valor'], order=self.auto_model.order)
+        model = SARIMAX(self.treino, order=self.auto_model.order, seasonal_order=self.auto_model.seasonal_order)
         model_fit = model.fit() 
 
         match self.freq:
