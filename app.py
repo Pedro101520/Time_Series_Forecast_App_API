@@ -2,7 +2,8 @@ from flask import Flask, make_response, jsonify, request
 import pandas as pd
 from models.pre_processing import tratamento_base
 from models.prophet import ProphetModel
-from models.arima import ArimaModel
+from models.sarima import ArimaModel
+from models.holt_winters import Holt_Winters_Model
 
 app = Flask(__name__) 
 
@@ -12,6 +13,8 @@ def upload_csv():
     pipeline = tratamento_base()
     prophet = ProphetModel()
     arima = ArimaModel()
+    holt_winters = Holt_Winters_Model()
+
 
     if "file" not in request.files:
         return jsonify({"error": "Nenhum arquivo enviado"}), 400
@@ -37,8 +40,11 @@ def upload_csv():
         # prophet.prever_futuro()
         # df_pred_prophet = prophet.retorna()
 
-        arima.avaliar(df_tratado[["Data", "Valor"]], treino, teste)
-        arima.prever_futuro()
+        # arima.avaliar(df_tratado[["Data", "Valor"]], treino, teste)
+        # arima.prever_futuro()
+
+        holt_winters.avaliar(df_tratado[["Data", "Valor"]])
+        holt_winters.prever_futuro()
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
 
