@@ -76,7 +76,7 @@ def upload_csv():
 
 
     return jsonify({
-        "message": "CSV tratado com sucesso",
+        "message": "Modelo treinado com sucesso",
         "Melhor Modelo": f"{modelo}",
         "Metricas": f"{metricas}",
         "Forecast": forecast.to_dict(orient="records")

@@ -40,8 +40,8 @@ def rota_prophet():
         return jsonify({"erro": str(e)}), 400
 
     return jsonify({
-        "message": "CSV tratado com sucesso",
-        "Melhor Modelo": f"{modelo}",
+        "message": "Modelo treinado com sucesso",
+        "Modelo": f"{modelo}",
         "Metricas": f"{metricas}",
         "Forecast": forecast.to_dict(orient="records")
     }), 200
